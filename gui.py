@@ -1,7 +1,6 @@
 
 
 import tkinter as tk
-from database import Database
 import dblog as dl
 
 
@@ -21,12 +20,14 @@ class Gui(tk.Frame):
       root.geometry("400x400")
       root.resizable(0,0)
       self.root = root
-
       
       try:
          self.dbl = dl.Dblog()
       except Exception as e:
          print(e)
+      else:
+         self.mutex = True
+
 
    def show(self):
       self.canvas = tk.Canvas(self.root, width=400, height=400)
@@ -34,7 +35,7 @@ class Gui(tk.Frame):
       self.canvas.create_line(3,383, 398, 383, width=2)
 
       self.text_out = tk.Text(self.root, width=45, height=9, wrap=tk.WORD)
-      # self.canvas.create_rectangle(3,3, 399, 397, outline='black', width=2)
+      # self.canvas.create_rectangle(20,41, 399, 397, outline='black', width=2)
       
       self.text_in = tk.Text(self.root, width=45, height=5)
       # self.canvas.create_rectangle(3,3, 399, 397, outline='black', width=2)
@@ -56,8 +57,12 @@ class Gui(tk.Frame):
       self.btn_read.place(x=100, y=350, anchor='s')
       self.btn_write.place(x=300, y=350, anchor='s')
 
-      #show the las message
-      self.read()
+      if self.mutex == True:
+         try:
+            #show the last message
+            self.read()
+         except Exception as e:
+            print(e.with_traceback)
 
 
    def read(self):
@@ -65,8 +70,7 @@ class Gui(tk.Frame):
          row = self.dbl.read()
          date = str(row[1])
          txt = str(row[2])
-         msg = f"----------------------------------{date}\n{txt}"
-         print('read >>>>>>>> ', txt)
+         msg = f"[ {date} ]\n{txt}"
          self.text_out.configure(state='normal')
          self.text_out.delete('1.0', 'end')
          self.text_out.insert('1.0', msg)
@@ -76,15 +80,13 @@ class Gui(tk.Frame):
 
 
    def write(self):
-      msg = self.text_in.get(1.0, tk.END + '-1c') # to get it without the extra newline 
-      print('written >>>>>>>>> ', msg)
+      msg = self.text_in.get(1.0, tk.END + '-1c') # to get it without the extra newline at the end
       try:
          self.dbl.update(msg)
-      except Exception as e:
+      except Exception as e: # if there is no record in the table!
          print(e)
-
-if __name__ == '__main__':
-   window = tk.Tk()
-   gui = Gui(root=window)
-   gui.show()
-   window.mainloop()
+         try:
+            self.dbl.write(msg)
+         except Exception as e:
+            print(e)
+         
